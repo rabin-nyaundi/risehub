@@ -1,5 +1,5 @@
 from typing import Optional, List
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from uuid import UUID
 from app.models.user import User, Profile, Role
 
@@ -7,8 +7,17 @@ class UserRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def get(self, db: Session, user_id: UUID) -> Optional[User]:
+    def get_by_id(self, db: Session, user_id: UUID) -> Optional[User]:
         return db.query(User).filter(User.id == user_id, User.is_deleted == False).first()
+    
+    def get_active_by_id(self, db: Session, user_id: UUID) -> Optional[User]:
+        return db.query(User).filter(User.id == user_id, User.is_deleted == False, User.is_active == True).first()
+
+    def get(self, db: Session, user_id: UUID) -> Optional[User]:
+        return db.query(User).options(
+            joinedload(User.profile),
+            joinedload(User.roles)
+        ).filter(User.id == user_id, User.is_deleted == False).first()
 
     def get_all(self, db: Session, skip: int = 0, limit: int = 100) -> List[User]:
         return db.query(User).filter(User.is_deleted == False).offset(skip).limit(limit).all()
@@ -23,10 +32,24 @@ class UserRepository:
     def update(self, db: Session, user_id: UUID, **kwargs) -> Optional[User]:
         user = self.get(db, user_id)
         if user:
+            profile_data = kwargs.pop('profile', None)
+            
             for key, value in kwargs.items():
                 setattr(user, key, value)
+            
+            if profile_data:
+                if not user.profile:
+                    profile = Profile(user=user, **profile_data)
+                    db.add(profile)
+                else:
+                    for key, value in profile_data.items():
+                        setattr(user.profile, key, value)
+            
             db.commit()
             db.refresh(user)
+            user.profile
+            user.roles
+            
         return user
 
     def delete(self, db: Session, user_id: UUID) -> bool:

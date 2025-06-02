@@ -85,11 +85,8 @@ class UserLoginSchema(BaseModel):
 
 class UserUpdateSchema(BaseModel):
     email: Optional[EmailStr] = None
-    full_name: Optional[str] = None
-    bio: Optional[str] = None
-    location: Optional[str] = None
-    profile_picture: Optional[str] = None
     is_active: Optional[bool] = None
+    profile: Optional[dict] = None
 
     class Config:
         from_attributes = True

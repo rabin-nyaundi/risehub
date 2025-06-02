@@ -11,6 +11,7 @@ class User(BaseModel):
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+    is_superuser = Column(Boolean, default=False, nullable=False)
     profile = relationship("Profile", uselist=False, back_populates="user")
     roles = relationship("Role", secondary="user_roles", back_populates="users")
     

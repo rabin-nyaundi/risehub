@@ -25,8 +25,8 @@ async def update_user_me(
     """
     Update current user
     """
-    user = await UserService.update_user(current_user.id, user_in)
-    return user
+    user_dict = await UserService.update_user(current_user.id, user_in)
+    return UserResponse(**user_dict)
 
 @router.get("/{user_id}", response_model=UserResponse)
 async def read_user_by_id(

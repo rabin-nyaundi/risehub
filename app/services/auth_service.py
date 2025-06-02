@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional
 import jwt
 from passlib.context import CryptContext
@@ -28,15 +28,15 @@ class AuthService:
     def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
         to_encode = data.copy()
         if expires_delta:
-            expire = datetime.utcnow() + expires_delta
+            expire = datetime.now(UTC) + expires_delta
         else:
-            expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+            expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         to_encode.update({"exp": expire})
         encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm="HS256")
         return encoded_jwt
 
     @staticmethod
-    async def authenticate_user(email: str, password: str) -> Optional[User]:
+    async def authenticate_user(email: str, password: str) -> Optional[UserResponse]:
         with DatabaseSession() as db:
             repo = UserRepository(db)
             user = repo.get_by_username(db, email)
@@ -44,7 +44,16 @@ class AuthService:
                 return None
             if not AuthService.verify_password(password, user.password_hash):
                 return None
-            return user
+            return UserResponse(
+                 id=user.id,
+                email=user.email,
+                username=user.username,
+                is_active=user.is_active,
+                created_at=user.created_at,
+                updated_at=user.updated_at,
+                profile=user.profile,
+                roles=user.roles
+            )
 
     @staticmethod
     async def create_user(user_data: UserCreateSchema) -> UserResponse:

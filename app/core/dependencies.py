@@ -32,7 +32,7 @@ async def get_current_user(
         raise credentials_exception
         
     user_repo = UserRepository(db)
-    user = user_repo.get_by_id(user_id)
+    user = user_repo.get_by_id(db, user_id)
     if user is None:
         raise credentials_exception
     return user
